@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftAutoFisher", "MinecraftAutoFisher\MinecraftAutoFisher.csproj", "{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7F0E3929-E451-4A1B-8EE5-ADA70C3D0F34}
+	EndGlobalSection
+EndGlobal
