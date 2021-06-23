@@ -2,8 +2,9 @@
 {
 	public enum AutoFisherLogType
 	{
-		Verbose = 2,
-		Info = 1,
+		Verbose = 3,
+		Info = 2,
+		Warning = 1,
 		Error = 0
 	}
 	

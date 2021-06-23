@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace AutoFisher
 {
 	public class AutoFisher
 	{
+		private const int Radius = 40;
 		private static readonly HashSet<Color> PossibleBobberColor = new();
 
 		static AutoFisher()
@@ -21,7 +23,8 @@ namespace AutoFisher
 				PossibleBobberColor.Add(Color.FromArgb(i, j, k));
 		}
 
-		private bool _isRunning;
+		public bool IsRunning { get; private set; }
+
 		private Point _topLeftPoint;
 		private Point _bottomRightPoint;
 		private readonly Timer _timer;
@@ -31,22 +34,50 @@ namespace AutoFisher
 		private DateTime _lastTime;
 
 		private long _caught;
+		private int _guiWidth;
+
+		private int _successiveIterations;
+
+		private Process _minecraftProcess;
 
 		/// <summary>
 		/// Creates a new AutoFisher instance.
 		/// </summary>
+		/// <param name="guiWidth">The GUI width.</param>
 		/// <param name="delay">The delay between checks.</param>
 		/// <param name="logType">The logging type.</param>
-		public AutoFisher(int delay = 1000, AutoFisherLogType logType = AutoFisherLogType.Info)
+		public AutoFisher(int guiWidth = 2, int delay = 500, AutoFisherLogType logType = AutoFisherLogType.Info)
 		{
+			_successiveIterations = 0;
+			_guiWidth = guiWidth;
 			_lastTime = default;
-			_isRunning = false;
-			_timer = new Timer(Math.Max(delay, 200));
-			_averageTimes = new Dictionary<double, long>();
+			IsRunning = false;
 			_logType = logType;
+			_timer = new Timer(delay is >= 200 and <= 850 ? delay : 850);
+			if ((int) _logType >= 2)
+			{
+				ConsoleHelper.WriteLine(
+					ConsoleLogType.Info,
+					$"Constructor called. Timer set to: {_timer.Interval} Milliseconds."
+				);
+			}
+
+			_averageTimes = new Dictionary<double, long>();
 			_caught = 0;
 			_timer.Elapsed += async (_, _) => await CheckBobber();
 		}
+
+		/// <summary>
+		/// Sets the Minecraft process.
+		/// </summary>
+		/// <param name="mc">The Minecraft process.</param>
+		/// <returns>This object.</returns>
+		public AutoFisher SetMinecraftProcess(Process mc)
+		{
+			_minecraftProcess = mc;
+			return this;
+		}
+
 
 		/// <summary>
 		/// Calibrates the bobber. This will pinpoint the bobber location and make a note for future reference.
@@ -54,33 +85,27 @@ namespace AutoFisher
 		/// <returns>Whether a bobber was found.</returns>
 		public bool Calibrate()
 		{
-			if ((int) _logType >= 1)
+			if ((int) _logType >= 2)
 				ConsoleHelper.WriteLine(ConsoleLogType.Info, "Attempting to calibrate. This might take a while.");
 
 			var currentTime = DateTime.Now;
 			using var screenshot = ScreenCapture.CaptureActiveWindow();
 			using var img = UnmanagedImage.FromManagedImage(screenshot);
-			for (var y = 0; y < img.Height; y++)
+			// Don't want to parse armor, hotbar, or health
+			for (var y = 0; y < img.Height - 50 * _guiWidth; y++)
 			for (var x = 0; x < img.Width; x++)
 			{
 				if (!IsValidBobber(img[x, y]))
 					continue;
 
 				_topLeftPoint = new Point(
-					x - 100 <= 0 ? 0 : x - 100,
-					y - 100 <= 0 ? 0 : y - 100);
+					x - Radius <= 0 ? 0 : x - Radius,
+					y - Radius <= 0 ? 0 : y - Radius);
 				_bottomRightPoint = new Point(
-					x + 100 > img.Width ? img.Width - 1 : x + 100,
-					y + 100 > img.Height ? img.Height - 1 : y + 100);
+					x + Radius > img.Width ? img.Width - 1 : x + Radius,
+					y + Radius > img.Height ? img.Height - 1 : y + Radius);
 
-				if ((int) _logType >= 1)
-				{
-					var timeTaken = Math.Round((DateTime.Now - currentTime).TotalSeconds, 1);
-					ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Successfully calibrated in {timeTaken} seconds.");
-					Console.WriteLine($"\tTop-Left Point: ({_topLeftPoint.X}, {_topLeftPoint.Y})");
-					Console.WriteLine($"\tTop-Left Point: ({_bottomRightPoint.X}, {_bottomRightPoint.Y})");
-				}
-
+				PrintCalibrationStats(currentTime);
 				return true;
 			}
 
@@ -94,13 +119,15 @@ namespace AutoFisher
 		/// </summary>
 		private async Task CheckBobber()
 		{
-			if (!_isRunning)
+			if ((int) _logType >= 3)
+				ConsoleHelper.WriteLine(ConsoleLogType.Info, "Checking bobber.");
+
+
+			if (!IsRunning)
 			{
 				_timer.Stop();
 				return;
 			}
-
-			_timer.Stop();
 
 			using var screenshot = ScreenCapture.CaptureActiveWindow();
 			using var img = UnmanagedImage.FromManagedImage(screenshot);
@@ -118,9 +145,18 @@ namespace AutoFisher
 			outLoop:
 			if (hasBobber)
 			{
-				_timer.Start();
+				_successiveIterations = 0;
+				if ((int) _logType >= 3)
+					ConsoleHelper.WriteLine(ConsoleLogType.Info, "Bobber still intact.");
+
 				return;
 			}
+
+			_timer.Stop();
+			_successiveIterations++;
+			// Handle possibility that we're not in position
+			if (HandleSuccessiveCatches())
+				return;
 
 			_caught++;
 			PrintCaughtStats();
@@ -160,24 +196,84 @@ namespace AutoFisher
 			_timer.Start();
 		}
 
+		/// <summary>
+		/// Starts the AutoFisher.
+		/// </summary>
 		public void Run()
 		{
-			if ((int) _logType >= 1) ConsoleHelper.WriteLine(ConsoleLogType.Info, "AutoFisher started.");
-			_isRunning = true;
+			if ((int) _logType >= 2)
+			{
+				var processName = _minecraftProcess is null ? "Active Window" : _minecraftProcess.ProcessName;
+				ConsoleHelper.WriteLine(ConsoleLogType.Info, "AutoFisher started.");
+				Console.WriteLine($"\tUsing Process: {processName}");
+			}
+			IsRunning = true;
 			_timer.Start();
 		}
 
+		/// <summary>
+		/// Stops the AutoFisher.
+		/// </summary>
 		public void Stop()
 		{
-			if ((int) _logType >= 1) ConsoleHelper.WriteLine(ConsoleLogType.Info, "AutoFisher stopped.");
-			_isRunning = false;
+			if ((int) _logType >= 2) ConsoleHelper.WriteLine(ConsoleLogType.Info, "AutoFisher stopped.");
+			IsRunning = false;
+			_timer.Stop();
 		}
 
+		/// <summary>
+		/// Disposes the AutoFisher instance.
+		/// </summary>
 		public void Dispose() => _timer?.Dispose();
 
+
+		/// <summary>
+		/// Handles any successive catches. Because there's a long cooldown between catches, if the system seems to
+		/// catch something right after checking again multiple times, this could imply that the person might be out
+		/// of position.
+		/// </summary>
+		/// <returns>Whether the program was terminated as a result.</returns>
+		private bool HandleSuccessiveCatches()
+		{
+			switch (_successiveIterations)
+			{
+				case 4:
+					if (_logType >= 0)
+						ConsoleHelper.WriteLine(
+							ConsoleLogType.Error,
+							"Bobber appears to be reeled in and out extremely often. Terminating program."
+						);
+
+					var processes = Process.GetProcessesByName("javaw");
+					if (processes.Length <= 0) return false;
+					processes[0].Kill();
+					Stop();
+					Dispose();
+					return true;
+				case 3:
+					if ((int) _logType >= 1)
+						ConsoleHelper.WriteLine(
+							ConsoleLogType.Warning,
+							"Bobber appears to be reeled in and out very often. Program will terminate after one more fail."
+						);
+					return false;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		/// Whether the color is a valid bobber color.
+		/// </summary>
+		/// <param name="c1">The color.</param>
+		/// <returns>Whether the color is a valid bobber color.</returns>
 		private static bool IsValidBobber(Color c1)
 			=> PossibleBobberColor.Any(color => c1.IsRgbEqualTo(color));
 
+		/// <summary>
+		/// Calculates the average time taken to reel in a fish.
+		/// </summary>
+		/// <returns>A tuple with the average and number of entries.</returns>
 		private (double avg, long entries) CalculateAverage()
 		{
 			var sum = 0D;
@@ -191,17 +287,20 @@ namespace AutoFisher
 			return (sum / size, size);
 		}
 
+		#region Print Stats
+
 		private void PrintCaughtStats()
 		{
-			if ((int) _logType < 2) 
+			// >= 2
+			if ((int) _logType < 3)
 				return;
-			
+
 			if (_lastTime == default)
-				ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Caught something.");
+				ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Bobber gone. Caught something.");
 			else
 			{
 				var timeTaken = Math.Round((DateTime.Now - _lastTime).TotalSeconds, 1);
-				ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Caught something in {timeTaken} seconds.");
+				ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Bobber gone. Caught something in {timeTaken} seconds.");
 			}
 
 			Console.WriteLine($"\tAutoFisher has now caught {_caught} item(s).");
@@ -209,20 +308,20 @@ namespace AutoFisher
 
 		private void PrintTimeStats()
 		{
-			if (_caught % 10 != 0) 
+			if (_caught % 10 != 0)
 				return;
-			
+
 			var calculation = CalculateAverage();
 			var avg = Math.Round(calculation.avg, 1);
 			var entries = calculation.entries;
 			switch ((int) _logType)
 			{
-				case >= 2:
+				case 3:
 					Console.WriteLine(
 						$"\tAverage Time Per Fish: {avg} Seconds"
 					);
 					break;
-				case >= 1:
+				case 2:
 					ConsoleHelper.WriteLine(
 						ConsoleLogType.Info,
 						$"Average Time Per Fish: {avg} Seconds ({entries} Caught)"
@@ -230,6 +329,19 @@ namespace AutoFisher
 					break;
 			}
 		}
+
+		private void PrintCalibrationStats(DateTime currentTime)
+		{
+			if ((int) _logType < 2)
+				return;
+
+			var timeTaken = Math.Round((DateTime.Now - currentTime).TotalSeconds, 1);
+			ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Successfully calibrated in {timeTaken} seconds.");
+			Console.WriteLine($"\tTop-Left Point: ({_topLeftPoint.X}, {_topLeftPoint.Y})");
+			Console.WriteLine($"\tTop-Left Point: ({_bottomRightPoint.X}, {_bottomRightPoint.Y})");
+		}
+
+		#endregion
 	}
 
 	public static class ColorHelper

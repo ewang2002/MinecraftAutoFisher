@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using static PInvoke.User32;
 
@@ -7,10 +9,12 @@ namespace AutoFisher
 	public static class ScreenCapture
 	{
 		public static Bitmap CaptureActiveWindow()
-		{
-			return CaptureWindow(GetForegroundWindow());
-		}
+			=> CaptureWindow(GetForegroundWindow());
 		
+		public static Bitmap CaptureSpecificWindow([NotNull] Process process)
+			=> CaptureWindow(process.MainWindowHandle);
+
+
 		public static Bitmap CaptureWindow(IntPtr handle)
 		{
 			var windowInfo = new WINDOWINFO();
