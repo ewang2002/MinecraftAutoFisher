@@ -4,6 +4,8 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net5.0</TargetFramework>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <ApplicationIcon>RawCod.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>

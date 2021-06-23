@@ -53,7 +53,7 @@ namespace AutoFisher
 					ConsoleLogType.Error,
 					$"The directory, {mcFolder}, does not exist. Restart the program and try again."
 				);
-				return;
+				goto exit;
 			}
 
 			if (Directory.GetFiles(mcFolder).All(x => !x.EndsWith("options.txt")))
@@ -62,7 +62,7 @@ namespace AutoFisher
 					ConsoleLogType.Error,
 					$"The directory, {mcFolder}, does not have an \"options.txt\" file."
 				);
-				return;
+				goto exit;
 			}
 
 			var minecraftProcesses = Process.GetProcesses()
@@ -75,16 +75,16 @@ namespace AutoFisher
 						ConsoleLogType.Error,
 						"No Minecraft processes are running right now. Open Minecraft and try again."
 					);
-					return;
+					goto exit;
 				case >= 2:
 					ConsoleHelper.WriteLine(
 						ConsoleLogType.Error,
 						"You have multiple Minecraft processes open. Please close all but one process."
 					);
-					return;
+					goto exit;
 			}
 
-			using var correctProcess = minecraftProcesses[0];
+			var correctProcess = minecraftProcesses[0];
 
 			var options = await File.ReadAllLinesAsync(Path.Join(mcFolder, "options.txt"));
 			var guiWidthIdx = Array.FindIndex(options, x => x.StartsWith("guiScale:"));
@@ -94,7 +94,7 @@ namespace AutoFisher
 					ConsoleLogType.Error,
 					$"The \"options.txt\" file does not have a valid \"guiScale\" property."
 				);
-				return;
+				goto exit;
 			}
 
 			var gui = int.Parse(options[guiWidthIdx].Split(":")[1]);
@@ -106,7 +106,7 @@ namespace AutoFisher
 					ConsoleLogType.Error,
 					$"The \"options.txt\" file does not have a valid \"gamma\" property."
 				);
-				return;
+				goto exit;
 			}
 
 			var gammaValue = double.Parse(options[gammaIdx].Split(":")[1]);
@@ -171,6 +171,9 @@ namespace AutoFisher
 			{
 			}
 
+			correctProcess.Dispose();
+			
+			exit:
 			ConsoleHelper.WriteLine(ConsoleLogType.Info, "Press [Enter] to exit this program.");
 			Console.ReadLine();
 		}
