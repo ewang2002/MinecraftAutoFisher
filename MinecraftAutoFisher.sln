@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftAutoFisher", "MinecraftAutoFisher\MinecraftAutoFisher.csproj", "{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoFisher", "AutoFisher\AutoFisher.csproj", "{64300D6A-BB42-4C5C-A82A-209D15C0BCDA}"
 EndProject
 Global
@@ -13,10 +11,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DF33FE3D-C2DE-4D63-98B2-1C97B259381B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{64300D6A-BB42-4C5C-A82A-209D15C0BCDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{64300D6A-BB42-4C5C-A82A-209D15C0BCDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{64300D6A-BB42-4C5C-A82A-209D15C0BCDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
