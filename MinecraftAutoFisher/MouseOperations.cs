@@ -49,14 +49,7 @@ namespace MinecraftAutoFisher
 		public static void MouseEvent(MouseEventFlags value)
 		{
 			var position = GetCursorPosition();
-
-			mouse_event
-				((int)value,
-					position.X,
-					position.Y,
-					0,
-					0)
-				;
+			mouse_event((int)value, position.X, position.Y, 0, 0);
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
