@@ -118,9 +118,8 @@ namespace AutoFisher
 					+ "set so you have brightness no matter how dark the environment is (Full Bright). Do you want the "
 					+ "program to make this change for you? [y]/n"
 				);
-				var responseToQuestion = Console.ReadLine()?.ToLower() ?? string.Empty;
-				var result = responseToQuestion != "n";
-				if (result)
+				var setGammaVal = (Console.ReadLine()?.ToLower() ?? string.Empty) != "n";
+				if (setGammaVal)
 				{
 					options[gammaIdx] = "gamma:1000.0";
 					await File.WriteAllLinesAsync(Path.Join(mcFolder, "options.txt"), options);
@@ -134,11 +133,18 @@ namespace AutoFisher
 			var delay = 350;
 			ConsoleHelper.WriteLine(
 				ConsoleLogType.Info,
-				$"What should the delay between bobber check be? Minimum is 250 MS and maximum is 850 MS. [350]"
+				"What should the delay between bobber check be? Minimum is 250 MS and maximum is 850 MS. [350]"
 			);
 			delay = int.TryParse(Console.ReadLine(), out var y) && y is >= 250 and <= 850
 				? y
 				: delay;
+			
+			
+			ConsoleHelper.WriteLine(
+				ConsoleLogType.Info,
+				"Do you want to automatically close Minecraft when you are out of position for too long? [y]/n"
+			);
+			var closeMinecraftFoc = (Console.ReadLine()?.ToLower() ?? string.Empty) != "n";
 
 			ConsoleHelper.WriteLine(
 				ConsoleLogType.Info,
@@ -153,9 +159,14 @@ namespace AutoFisher
 					Console.WriteLine("\tReel your fishing rod out now.");
 				await Task.Delay(1000);
 			}
+			
+			Console.Clear();
 
 			var autoFisher = new AutoFisher(gui, delay)
-				.SetMinecraftProcess(correctProcess);
+			{
+				MinecraftProcess = correctProcess,
+				AutoCloseWhenOutOfFocus = closeMinecraftFoc
+			};
 
 			if (!autoFisher.Calibrate())
 			{

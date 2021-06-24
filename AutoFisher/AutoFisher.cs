@@ -24,21 +24,20 @@ namespace AutoFisher
 		}
 
 		public bool IsRunning { get; private set; }
-
 		private Point _topLeftPoint;
 		private Point _bottomRightPoint;
 		private readonly Timer _timer;
 		private AutoFisherLogType _logType;
-
 		private Dictionary<double, long> _averageTimes;
 		private DateTime _lastTime;
-
 		private long _caught;
 		private int _guiWidth;
 
 		private int _successiveIterations;
 
-		private Process _minecraftProcess;
+
+		public Process MinecraftProcess { get; init; }
+		public bool AutoCloseWhenOutOfFocus { get; init; }
 
 		/// <summary>
 		/// Creates a new AutoFisher instance.
@@ -65,17 +64,6 @@ namespace AutoFisher
 			_averageTimes = new Dictionary<double, long>();
 			_caught = 0;
 			_timer.Elapsed += async (_, _) => await CheckBobber();
-		}
-
-		/// <summary>
-		/// Sets the Minecraft process.
-		/// </summary>
-		/// <param name="mc">The Minecraft process.</param>
-		/// <returns>This object.</returns>
-		public AutoFisher SetMinecraftProcess(Process mc)
-		{
-			_minecraftProcess = mc;
-			return this;
 		}
 
 
@@ -203,10 +191,12 @@ namespace AutoFisher
 		{
 			if ((int) _logType >= 2)
 			{
-				var processName = _minecraftProcess is null ? "Active Window" : _minecraftProcess.ProcessName;
+				var processName = MinecraftProcess is null ? "Active Window" : MinecraftProcess.ProcessName;
 				ConsoleHelper.WriteLine(ConsoleLogType.Info, "AutoFisher started.");
 				Console.WriteLine($"\tUsing Process: {processName}");
+				Console.WriteLine($"\tAuto-Kill when Out of Position: {(AutoCloseWhenOutOfFocus ? "Yes" : "No")}");
 			}
+
 			IsRunning = true;
 			_timer.Start();
 		}
@@ -235,6 +225,8 @@ namespace AutoFisher
 		/// <returns>Whether the program was terminated as a result.</returns>
 		private bool HandleSuccessiveCatches()
 		{
+			if (!AutoCloseWhenOutOfFocus) return false;
+			
 			switch (_successiveIterations)
 			{
 				case 4:
