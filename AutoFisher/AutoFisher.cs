@@ -132,6 +132,7 @@ public class AutoFisher
                 y + Radius > img.Height ? img.Height - 1 : y + Radius);
 
             PrintCalibrationStats(currentTime);
+            _lastTime = DateTime.Now;
             return true;
         }
 
@@ -174,23 +175,17 @@ public class AutoFisher
         // Handle possibility that we're not in position
         if (HandleSuccessiveCatches())
             return;
-
+        
         _caught++;
         PrintCaughtStats();
+        
+        var diff = DateTime.Now - _lastTime;
+        var diffRounded = Math.Round(diff.TotalSeconds, 1);
 
-        if (_lastTime == default)
-            _lastTime = DateTime.Now;
-        else
-        {
-            var diff = DateTime.Now - _lastTime;
-            var diffRounded = Math.Round(diff.TotalSeconds, 1);
+        if (_averageTimes.ContainsKey(diffRounded)) _averageTimes[diffRounded]++;
+        else _averageTimes.Add(diffRounded, 1);
 
-            if (_averageTimes.ContainsKey(diffRounded)) _averageTimes[diffRounded]++;
-            else _averageTimes.Add(diffRounded, 1);
-
-            _lastTime = DateTime.Now;
-        }
-
+        _lastTime = DateTime.Now;
         // Display average time per fish.
         PrintTimeStats();
 
@@ -205,7 +200,8 @@ public class AutoFisher
         // Send another right-click to reel out.
         MouseOperations.SendMouseEvent(User32.MOUSEEVENTF.MOUSEEVENTF_RIGHTDOWN);
         MouseOperations.SendMouseEvent(User32.MOUSEEVENTF.MOUSEEVENTF_RIGHTUP);
-
+        ConsoleHelper.WriteLine(ConsoleLogType.Info, "Reeled fishing rod out.");
+        
         // Additional cooldown since the bobber might go back underwater for a bit of time.
         // Usually after 2.5 seconds, the bobber rests above water.
         await Task.Delay(TimeSpan.FromSeconds(2.5));
@@ -310,17 +306,9 @@ public class AutoFisher
     /// </summary>
     private void PrintCaughtStats()
     {
-        if (_lastTime == default)
-        {
-            ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Bobber no longer in view. Caught something.");
-        }
-        else
-        {
-            var timeTaken = Math.Round((DateTime.Now - _lastTime).TotalSeconds, 1);
-            ConsoleHelper.WriteLine(ConsoleLogType.Info,
-                $"Bobber no longer in view. Caught something in {timeTaken} seconds.");
-        }
-
+        var timeTaken = Math.Round((DateTime.Now - _lastTime).TotalSeconds, 1);
+        ConsoleHelper.WriteLine(ConsoleLogType.Info,
+            $"Bobber no longer in view. Caught something in {timeTaken} seconds.");
         Console.WriteLine($"\tAutoFisher has now caught {_caught} item(s).");
     }
 
@@ -329,7 +317,7 @@ public class AutoFisher
     /// </summary>
     private void PrintTimeStats()
     {
-        if (_caught % 10 != 0)
+        if (_caught % 5 != 0)
             return;
 
         var (time, numCaught) = CalculateAverage();
