@@ -336,8 +336,8 @@ public class AutoFisher
     {
         var timeTaken = Math.Round((DateTime.Now - calibrationStarted).TotalSeconds, 1);
         ConsoleHelper.WriteLine(ConsoleLogType.Info, $"Successfully calibrated in {timeTaken} seconds.");
-        Console.WriteLine($"\tTop-Left Point: ({_topLeftPoint.X}, {_topLeftPoint.Y})");
-        Console.WriteLine($"\tTop-Left Point: ({_bottomRightPoint.X}, {_bottomRightPoint.Y})");
+        Console.WriteLine($"\tTop-Left Point:     ({_topLeftPoint.X}, {_topLeftPoint.Y})");
+        Console.WriteLine($"\tBottom-Right Point: ({_bottomRightPoint.X}, {_bottomRightPoint.Y})");
     }
 
     #endregion
