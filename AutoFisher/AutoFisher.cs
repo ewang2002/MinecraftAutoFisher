@@ -317,7 +317,7 @@ public class AutoFisher
     /// </summary>
     private void PrintTimeStats()
     {
-        if (_caught % 5 != 0)
+        if (_caught % 10 != 0)
             return;
 
         var (time, numCaught) = CalculateAverage();
